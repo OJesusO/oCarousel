@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>oCarousel</title>
+    <link rel="stylesheet" href="main.css">
+    <style>
+        .oCarousel {
+            position: relative;
+            overflow: hidden;
+            width: 600px;
+            height: 300px;
+            margin: 10px auto;
+        }
+        .oCarousel-main {
+            position: absolute;
+            width: 3000px;
+            transform: translate3d(0, 0, 0);
+        }
+        .oCarousel-item {
+            float: left;
+        }
+    </style>
+</head>
+<body>
+    <section class="oCarousel">
+        <ul class="oCarousel-main">
+            <li class="oCarousel-item">
+                <img src="https://placehold.it/600x300/000/fff" width="600" height="300" alt="">
+            </li>
+            <li class="oCarousel-item">
+                <img src="https://placehold.it/600x300/666/000" width="600" height="300" alt="">
+            </li>
+            <li class="oCarousel-item">
+                <img src="https://placehold.it/600x300/333/fff" width="600" height="300" alt="">
+            </li>
+            <li class="oCarousel-item">
+                <img src="https://placehold.it/600x300/666/333" width="600" height="300" alt="">
+            </li>
+            <li class="oCarousel-item">
+                <img src="https://placehold.it/600x300/000/ff0" width="600" height="300" alt="">
+            </li>
+        </ul>
+    </section>
+
+    <script src="./oCarousel.js"></script>
+    <script>
+    </script>
+</body>
+</html>
