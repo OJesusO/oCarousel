@@ -11,77 +11,217 @@
     }
 })(this, (doc = document) => {
     const CONF = {
-        mainClass: 'oCarousel',
+        blockClass: 'oCarousel',
         finishClass: 'oCarousel-doit',
+        mainClass: 'oCarousel-main',
+        itemClass: 'oCarousel-item',
         defaultMethod: 'rollit',
         rollit: {
             intval: 3000,
             duration: .3,
             startPoint: 0,
             autoRollIt: 1,
-            mainClass: 'oCarousel-main',
-            itemClass: 'oCarousel-item',
+            attrName: 'rollit',
         },
         rotate: {
 
         },
     };
-    const Carousel = (config = CONF) => {
-        Carousel.Rollit(config.rollit);
-        Carousel.Rotate(config.rotate);
-        Carousel.initOtherBlock(METHODS[CONF.defaultMethod], config[CONF.defaultMethod]);
-    };
-    Carousel.Rollit = ({
 
-    } = {}) => {
+    class Carousel {
+        constructor() {
+            this.setMethod();
 
-    };
-    Carousel.Rotate = conf => {};
+            let M = this.Manager.bind(this)
+                M.__proto__ = this;
+            return M;
+        }
+        Manager(conf) {
+            this.config = TOOL.extend(true, {}, CONF, conf);
+            // this.Rollit(this.config.rollit);
+            // this.Rotate(this.config.rotate);
+            this.initOtherBlock(this.ManagerBlock.METHODS[this.config.defaultMethod]);
+            return this.Blocks;
+        }
+        Rollit() {}
+        Rotate() {}
 
-    Carousel.initOtherBlock = (method, config) => Carousel.getNoFinishBlock().map(block => method(block, config));
-    Carousel.getNoFinishBlock = x => Array.from(doc.querySelectorAll(`.${CONF.mainClass}:not(.${CONF.finishClass})`));
-
-    const METHODS = {};
-    METHODS.rollit = (block, {
-        intval, duration, startPoint, autoRollIt, mainClass, itemClass
-    } = CONF.rollit) => {
-        let main = block.querySelector(`.${mainClass}`);
-        let items = main.querySelectorAll(`.${itemClass}`);
-        let widths = Array.from(items).map(v => v.clientWidth);
-        let length = widths.length;
-        let _intval = 0;
-        let _point = 0;
-        function autoRoll() {
-            stopRoll() || (_intval = setInterval(next, intval));
+        get Blocks() {
+            return this.ManagerBlock.blocks;
         }
-        function stopRoll() {
-            _intval = +!!clearInterval(_intval);
+        get ManagerBlock() {
+            // console.log(Block.name)
+            return Block;
         }
-        function getWidth() {
-            return widths.slice(0, _point).reduce((c, v) => c + v, 0);
+        setMethod() {
+            let methods = this.ManagerBlock.METHODS;
+            for (let i in methods) {
+                this[methods[i].name] = function(elem, conf) {
+                    if (elem instanceof HTMLElement) {
+                        return new methods[i](elem, conf);
+                    }
+                    conf = TOOL.extend(true, {}, CONF, {[i]: TOOL.extend(true, {}, TOOL[i], elem)});
+                    // TODO: console.log(doc.querySelectorAll(`.${CONF.blockClass}[${conf[i].attrName}]`))
+                }.bind(this);
+            }
         }
-        function setPoint(p = startPoint) {
-            _point = p >= length ? 0 : (p < 0 ? length - 1 : p);
+        initOtherBlock(method) {
+            return this.getNoFinishBlock().map(elem => new method(elem, this.config));
         }
-        function next() {
-            setPoint(++_point) || setIndex();
+        getNoFinishBlock() {
+            return Array.from(doc.querySelectorAll(`.${this.config.blockClass}:not(.${this.config.finishClass})`));
         }
-        function prev() {
-            setPoint(--_point) || setIndex();
-        }
-        function setIndex() {
-            main.style.transitionDuration = `${duration}s`;
-            main.style.transform = `translate3d(-${getWidth()}px, 0, 0)`;
-        }
-        setPoint();
-        autoRollIt && autoRoll();
-        block.addEventListener('mouseenter', e => stopRoll());
-        block.addEventListener('mouseleave', e => autoRoll());
     }
 
-    return Carousel;
+    class Block {
+        constructor(elem, config) {
+            this.CONFIG = config;
+            this.elem = elem;
+            this.main = this.elem.querySelector(`.${config.mainClass}`);
+            this.items = this.main.querySelectorAll(`.${config.itemClass}`);
+            this.addBlocks(this.getName(elem));
+        }
+
+        addBlocks(name) {
+            (Block.blocks || (Block.blocks = {})) && (Block.blocks[name] = this)
+        }
+        getName(elem) {
+            return elem.getAttribute('name') || `block_${this.xxx}`;
+        }
+        get xxx() {
+            Block.x || (Block.x = 0)
+            return ++Block.x
+        }
+        listener() {
+            this.elem.addEventListener('mouseenter', e => this.stopRoll());
+            this.elem.addEventListener('mouseleave', e => this.autoRoll());
+        }
+        stopRoll() {}
+        autoRoll() {}
+        
+        static addMethods(name, classs) {
+            (Block.METHODS || (Block.METHODS = {})) && (Block.METHODS[name] = classs)
+        }
+    }
+
+    class Rollit extends Block {
+        constructor(elem, config) {
+            super(elem, config)
+
+            this.config = config.rollit
+            this.widths = Array.from(this.items).map(v => v.clientWidth);
+            this.length = this.widths.length;
+
+            this._intval = 0;
+            this._point = 0;
+
+            this.listener();
+            this.setPoint(this.config.startPoint);
+            this.config.autoRollIt && this.autoRoll();
+        }
+        autoRoll() {
+            this.stopRoll() || (this._intval = setInterval(x => this.next(), this.config.intval));
+        }
+        stopRoll() {
+            this._intval = +!!clearInterval(this._intval);
+        }
+        getWidth() {
+            return this.widths.slice(0, this._point).reduce((c, v) => c + v, 0);
+        }
+        setPoint(p) {
+            this._point = p >= this.length ? 0 : (p < 0 ? this.length - 1 : p);
+        }
+        next() {
+            this.setPoint(++this._point) || this.setIndex();
+        }
+        prev() {
+            this.setPoint(--this._point) || this.setIndex();
+        }
+        setIndex() {
+            this.main.style.transitionDuration = `${this.config.duration}s`;
+            this.main.style.transform = `translate3d(-${this.getWidth()}px, 0, 0)`;
+        }
+    }
+    Block.addMethods('rollit', Rollit);
+
+
+    const TOOL = {
+        isArray(param) {
+			return this.type(param) === '[object Array]';
+        },
+        isObject(param) {
+			return this.type(param) === '[object Object]';
+		},
+        isPlainObject(param) {
+			return this.isObject(param) && !this.isWindow(param) && Object.getPrototypeOf(param) === Object.prototype;
+        },
+        isFunction(param) {
+			return this.type(param) === '[object Function]';
+        },
+        isWindow(param) {
+			return param != null && param === param.window;
+		},
+        type(param) {
+			return param == null ? String(param) : Object.prototype.toString.call(param)||'object';
+		},
+        extend() {
+            var options, name, src, copy, copyIsArray, clone,
+                target = arguments[0] || {},
+                i = 1,
+                length = arguments.length,
+                deep = false;
+    
+            if (typeof target === 'boolean') {
+                deep = target;
+    
+                target = arguments[i] || {};
+                i++;
+            }
+    
+            if (typeof target !== 'object' && !this.isFunction(target)) {
+                target = {};
+            }
+    
+            if (i === length) {
+                target = this;
+                i--;
+            }
+    
+            for (; i < length; i++) {
+                if ((options = arguments[i]) != null) {
+                    for (name in options) {
+                        src = target[name];
+                        copy = options[name];
+    
+                        if (target === copy) {
+                            continue;
+                        }
+    
+                        if (deep && copy && (this.isPlainObject(copy) || (copyIsArray = this.isArray(copy)))) {
+                            if (copyIsArray) {
+                                copyIsArray = false;
+                                clone = src && this.isArray(src) ? src : [];
+    
+                            } else {
+                                clone = src && this.isPlainObject(src) ? src : {};
+                            }
+    
+                            target[name] = this.extend(deep, clone, copy);
+    
+                        } else if (copy !== undefined) {
+                            target[name] = copy;
+                        }
+                    }
+                }
+            }
+            return target;
+        }
+    };
+
+    const oCarousel = new Carousel();
+    return oCarousel;
 });
 
 
 
-oCarousel({})
+oCarousel.Rollit({})
